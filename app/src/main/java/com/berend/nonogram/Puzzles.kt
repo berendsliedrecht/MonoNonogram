@@ -1,6 +1,6 @@
 package com.berend.nonogram
 
-val BoardSizes = listOf(5, 8, 10, 12)
+val BoardSizes = listOf(5, 8, 10)
 
 data class Puzzle(val name: String, val art: List<String>) {
     val rows: Int get() = art.size
