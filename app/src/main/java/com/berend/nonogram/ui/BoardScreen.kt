@@ -38,8 +38,8 @@ import androidx.compose.ui.unit.sp
 import com.berend.nonogram.Cell
 import com.berend.nonogram.NonogramViewModel
 import com.berend.nonogram.Puzzle
-import com.berend.nonogram.Puzzles
 import com.berend.nonogram.Tool
+import com.berend.nonogram.formatDuration
 import com.mudita.mmd.components.buttons.ButtonMMD
 import com.mudita.mmd.components.buttons.OutlinedButtonMMD
 import com.mudita.mmd.components.text.TextMMD
@@ -62,13 +62,8 @@ fun BoardScreen(viewModel: NonogramViewModel) {
                 }
             },
             title = {
-                val size = viewModel.randomSize
                 TextMMD(
-                    text = when {
-                        size != null -> "Random $size x $size"
-                        viewModel.solved -> puzzle.name
-                        else -> "Puzzle ${Puzzles.indexOf(puzzle) + 1}"
-                    },
+                    text = "${puzzle.rows} x ${puzzle.cols}",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                 )
@@ -87,8 +82,9 @@ fun BoardScreen(viewModel: NonogramViewModel) {
             Spacer(modifier = Modifier.height(16.dp))
 
             if (viewModel.solved) {
+                val time = viewModel.lastSolveMillis
                 TextMMD(
-                    text = if (viewModel.randomSize != null) "Solved!" else "Solved: ${puzzle.name}",
+                    text = if (time != null) "Solved in ${formatDuration(time)}" else "Solved",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
@@ -114,10 +110,8 @@ fun BoardScreen(viewModel: NonogramViewModel) {
                 OutlinedButtonMMD(onClick = viewModel::clear, modifier = Modifier.weight(1f)) {
                     TextMMD(if (viewModel.solved) "Play again" else "Clear", fontSize = 16.sp)
                 }
-                if (viewModel.randomSize != null) {
-                    OutlinedButtonMMD(onClick = viewModel::newRandom, modifier = Modifier.weight(1f)) {
-                        TextMMD("New puzzle", fontSize = 16.sp)
-                    }
+                OutlinedButtonMMD(onClick = viewModel::newPuzzle, modifier = Modifier.weight(1f)) {
+                    TextMMD("New puzzle", fontSize = 16.sp)
                 }
             }
         }
