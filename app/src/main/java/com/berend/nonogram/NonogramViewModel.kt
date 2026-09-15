@@ -23,6 +23,9 @@ class NonogramViewModel(app: Application) : AndroidViewModel(app) {
     var lastSolveMillis: Long? by mutableStateOf(null)
         private set
     var tool: Tool by mutableStateOf(Tool.Fill)
+    // Cross out clue lines whose runs are currently satisfied
+    var hints: Boolean by mutableStateOf(prefs.getBoolean("hints", false))
+        private set
     val grid = mutableStateListOf<Cell>()
     private val undoStack = mutableStateListOf<Pair<Int, Cell>>()
     val canUndo: Boolean get() = undoStack.isNotEmpty()
@@ -60,6 +63,11 @@ class NonogramViewModel(app: Application) : AndroidViewModel(app) {
 
     fun close() {
         current = null
+    }
+
+    fun toggleHints() {
+        hints = !hints
+        prefs.edit().putBoolean("hints", hints).apply()
     }
 
     fun tap(index: Int) {

@@ -16,7 +16,7 @@ Or sideload the release APK from `app/build/outputs/apk/release/` (debug-signed 
 - `Solver.kt`: line-logic solver and the random puzzle generator built on it
 - `NonogramViewModel.kt`: board state, undo, win detection, solve timing and persisted progress
 - `ui/HomeScreen.kt`: grid size buttons and the stats entry
-- `ui/BoardScreen.kt`: clue and grid canvas, fill/mark tools, undo, clear and new puzzle
+- `ui/BoardScreen.kt`: clue and grid canvas, fill/mark tools, undo, a toggle that crosses out finished lines, and a board menu (bottom sheet) with clear and new puzzle
 - `ui/StatsScreen.kt`: games solved and fastest solve per size
 
 `PuzzleSolvabilityTest` checks clue derivation, rejects an ambiguous puzzle, and asserts generated puzzles at every size are solvable with line logic alone.

@@ -15,11 +15,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -39,9 +44,12 @@ import com.berend.nonogram.Cell
 import com.berend.nonogram.NonogramViewModel
 import com.berend.nonogram.Puzzle
 import com.berend.nonogram.Tool
+import com.berend.nonogram.clues
 import com.berend.nonogram.formatDuration
+import com.mudita.mmd.components.bottom_sheet.ModalBottomSheetMMD
 import com.mudita.mmd.components.buttons.ButtonMMD
 import com.mudita.mmd.components.buttons.OutlinedButtonMMD
+import com.mudita.mmd.components.switcher.SwitchMMD
 import com.mudita.mmd.components.text.TextMMD
 import com.mudita.mmd.components.top_app_bar.TopAppBarMMD
 
@@ -50,6 +58,8 @@ import com.mudita.mmd.components.top_app_bar.TopAppBarMMD
 fun BoardScreen(viewModel: NonogramViewModel) {
     val puzzle = viewModel.current ?: return
     BackHandler(onBack = viewModel::close)
+
+    var menuOpen by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBarMMD(
@@ -68,18 +78,33 @@ fun BoardScreen(viewModel: NonogramViewModel) {
                     fontWeight = FontWeight.Bold,
                 )
             },
+            actions = {
+                IconButton(onClick = { menuOpen = true }) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Board menu",
+                    )
+                }
+            },
         )
 
-        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+                .weight(1f),
+        ) {
             Board(
                 puzzle = puzzle,
                 grid = viewModel.grid,
                 enabled = !viewModel.solved,
+                hints = viewModel.hints && !viewModel.solved,
                 onTap = viewModel::tap,
-                modifier = Modifier.fillMaxWidth(),
+                // No fillMaxWidth: let the board shrink so the controls always fit below
+                modifier = Modifier.weight(1f, fill = false),
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             if (viewModel.solved) {
                 val time = viewModel.lastSolveMillis
@@ -104,15 +129,52 @@ fun BoardScreen(viewModel: NonogramViewModel) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            if (!viewModel.solved) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    TextMMD(
+                        text = "Cross out finished lines",
+                        fontSize = 16.sp,
+                        modifier = Modifier.weight(1f),
+                    )
+                    SwitchMMD(checked = viewModel.hints, onCheckedChange = { viewModel.toggleHints() })
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+    }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButtonMMD(onClick = viewModel::clear, modifier = Modifier.weight(1f)) {
-                    TextMMD(if (viewModel.solved) "Play again" else "Clear", fontSize = 16.sp)
-                }
-                OutlinedButtonMMD(onClick = viewModel::newPuzzle, modifier = Modifier.weight(1f)) {
-                    TextMMD("New puzzle", fontSize = 16.sp)
-                }
+    if (menuOpen) {
+        MenuSheet(
+            clearLabel = if (viewModel.solved) "Play again" else "Clear",
+            onClear = { menuOpen = false; viewModel.clear() },
+            onNew = { menuOpen = false; viewModel.newPuzzle() },
+            onDismiss = { menuOpen = false },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MenuSheet(clearLabel: String, onClear: () -> Unit, onNew: () -> Unit, onDismiss: () -> Unit) {
+    ModalBottomSheetMMD(onDismissRequest = onDismiss) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, bottom = 24.dp),
+        ) {
+            OutlinedButtonMMD(onClick = onClear, modifier = Modifier.fillMaxWidth()) {
+                TextMMD(clearLabel, fontSize = 16.sp)
+            }
+            OutlinedButtonMMD(onClick = onNew, modifier = Modifier.fillMaxWidth()) {
+                TextMMD("New puzzle", fontSize = 16.sp)
+            }
+            OutlinedButtonMMD(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+                TextMMD("Cancel", fontSize = 16.sp)
             }
         }
     }
@@ -142,6 +204,7 @@ private fun Board(
     puzzle: Puzzle,
     grid: List<Cell>,
     enabled: Boolean,
+    hints: Boolean,
     onTap: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -176,6 +239,11 @@ private fun Board(
             fontSize = (cell * 0.45f).toSp(),
             fontWeight = FontWeight.Bold,
         )
+        // A line is "done" when the runs of its current fills match its clue
+        fun rowDone(row: Int) = hints &&
+            clues((0 until puzzle.cols).map { grid[row * puzzle.cols + it] == Cell.Filled }) == puzzle.rowClues[row]
+        fun colDone(col: Int) = hints &&
+            clues((0 until puzzle.rows).map { grid[it * puzzle.cols + col] == Cell.Filled }) == puzzle.colClues[col]
 
         // Cell contents
         for (row in 0 until puzzle.rows) {
@@ -236,6 +304,24 @@ private fun Board(
             clues.forEachIndexed { i, value ->
                 drawClue(value, originX + col * cell, (clueRows - clues.size + i) * cell)
             }
+        }
+
+        // Strike through the clue band of finished lines. Drawn as explicit lines:
+        // TextMeasurer caches layouts ignoring textDecoration, so a struck digit
+        // would bleed into equal digits of unfinished lines.
+        val strike = 1.5f.dp.toPx()
+        val inset = cell * 0.2f
+        for (row in 0 until puzzle.rows) {
+            if (!rowDone(row)) continue
+            val y = originY + (row + 0.5f) * cell
+            val start = (clueCols - puzzle.rowClues[row].size) * cell
+            drawLine(Color.Black, Offset(start + inset, y), Offset(originX - inset, y), strike)
+        }
+        for (col in 0 until puzzle.cols) {
+            if (!colDone(col)) continue
+            val x = originX + (col + 0.5f) * cell
+            val start = (clueRows - puzzle.colClues[col].size) * cell
+            drawLine(Color.Black, Offset(x, start + inset), Offset(x, originY - inset), strike)
         }
     }
 }
