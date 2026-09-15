@@ -21,6 +21,8 @@ import com.mudita.mmd.components.divider.HorizontalDividerMMD
 import com.mudita.mmd.components.lazy.LazyColumnMMD
 import com.mudita.mmd.components.text.TextMMD
 
+private val RandomSizes = listOf(5, 8, 10, 12)
+
 @Composable
 fun PuzzleListScreen(viewModel: NonogramViewModel) {
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
@@ -29,34 +31,54 @@ fun PuzzleListScreen(viewModel: NonogramViewModel) {
         Spacer(modifier = Modifier.height(4.dp))
 
         LazyColumnMMD(contentPadding = PaddingValues(vertical = 8.dp)) {
+            items(RandomSizes.size) { index ->
+                val size = RandomSizes[index]
+                val status = when {
+                    viewModel.randomSolved(size) -> "Solved"
+                    viewModel.randomInProgress(size) -> "In progress"
+                    else -> null
+                }
+                PuzzleRow(
+                    title = "Random",
+                    status = status,
+                    sizeLabel = "$size x $size",
+                    onClick = { viewModel.openRandom(size) },
+                )
+                HorizontalDividerMMD()
+            }
             items(Puzzles.size) { index ->
                 val puzzle = Puzzles[index]
                 val solved = viewModel.isSolved(puzzle)
-                val status = when {
-                    solved -> "Solved"
-                    viewModel.inProgress(puzzle) -> "In progress"
-                    else -> null
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { viewModel.open(puzzle) }
-                        .padding(vertical = 14.dp),
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        // Names double as solution spoilers, so hide them until solved
-                        TextMMD(
-                            text = if (solved) puzzle.name else "Puzzle ${index + 1}",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        status?.let { TextMMD(it, fontSize = 14.sp) }
-                    }
-                    TextMMD("${puzzle.rows} x ${puzzle.cols}", fontSize = 16.sp)
-                }
+                PuzzleRow(
+                    // Names double as solution spoilers, so hide them until solved
+                    title = if (solved) puzzle.name else "Puzzle ${index + 1}",
+                    status = when {
+                        solved -> "Solved"
+                        viewModel.inProgress(puzzle) -> "In progress"
+                        else -> null
+                    },
+                    sizeLabel = "${puzzle.rows} x ${puzzle.cols}",
+                    onClick = { viewModel.open(puzzle) },
+                )
                 if (index < Puzzles.lastIndex) HorizontalDividerMMD()
             }
         }
+    }
+}
+
+@Composable
+private fun PuzzleRow(title: String, status: String?, sizeLabel: String, onClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 14.dp),
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            TextMMD(title, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            status?.let { TextMMD(it, fontSize = 14.sp) }
+        }
+        TextMMD(sizeLabel, fontSize = 16.sp)
     }
 }

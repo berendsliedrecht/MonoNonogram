@@ -62,8 +62,13 @@ fun BoardScreen(viewModel: NonogramViewModel) {
                 }
             },
             title = {
+                val size = viewModel.randomSize
                 TextMMD(
-                    text = if (viewModel.solved) puzzle.name else "Puzzle ${Puzzles.indexOf(puzzle) + 1}",
+                    text = when {
+                        size != null -> "Random $size x $size"
+                        viewModel.solved -> puzzle.name
+                        else -> "Puzzle ${Puzzles.indexOf(puzzle) + 1}"
+                    },
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                 )
@@ -83,7 +88,7 @@ fun BoardScreen(viewModel: NonogramViewModel) {
 
             if (viewModel.solved) {
                 TextMMD(
-                    text = "Solved: ${puzzle.name}",
+                    text = if (viewModel.randomSize != null) "Solved!" else "Solved: ${puzzle.name}",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
@@ -105,8 +110,15 @@ fun BoardScreen(viewModel: NonogramViewModel) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            OutlinedButtonMMD(onClick = viewModel::clear, modifier = Modifier.fillMaxWidth()) {
-                TextMMD(if (viewModel.solved) "Play again" else "Clear", fontSize = 16.sp)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButtonMMD(onClick = viewModel::clear, modifier = Modifier.weight(1f)) {
+                    TextMMD(if (viewModel.solved) "Play again" else "Clear", fontSize = 16.sp)
+                }
+                if (viewModel.randomSize != null) {
+                    OutlinedButtonMMD(onClick = viewModel::newRandom, modifier = Modifier.weight(1f)) {
+                        TextMMD("New puzzle", fontSize = 16.sp)
+                    }
+                }
             }
         }
     }

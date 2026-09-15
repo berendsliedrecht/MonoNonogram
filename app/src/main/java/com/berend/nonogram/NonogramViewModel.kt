@@ -17,6 +17,9 @@ class NonogramViewModel(app: Application) : AndroidViewModel(app) {
 
     var current: Puzzle? by mutableStateOf(null)
         private set
+    // Size of the current random puzzle, null when playing a bundled one
+    var randomSize: Int? by mutableStateOf(null)
+        private set
     var solved: Boolean by mutableStateOf(false)
         private set
     var tool: Tool by mutableStateOf(Tool.Fill)
@@ -29,6 +32,11 @@ class NonogramViewModel(app: Application) : AndroidViewModel(app) {
     fun inProgress(puzzle: Puzzle) =
         prefs.getString("grid_${puzzle.name}", null)?.any { it != '.' } == true
 
+    fun randomSolved(size: Int) = prefs.getBoolean("solved_random_$size", false)
+
+    fun randomInProgress(size: Int) =
+        prefs.getString("grid_random_$size", null)?.any { it != '.' } == true
+
     fun open(puzzle: Puzzle) {
         val saved = prefs.getString("grid_${puzzle.name}", null)
         grid.clear()
@@ -40,7 +48,35 @@ class NonogramViewModel(app: Application) : AndroidViewModel(app) {
         solved = isSolved(puzzle) && matchesSolution(puzzle)
         tool = Tool.Fill
         undoStack.clear()
+        randomSize = null
         current = puzzle
+    }
+
+    fun openRandom(size: Int) {
+        val art = prefs.getString("art_random_$size", null)?.split("\n")
+        val puzzle = if (art?.size == size && art.all { it.length == size }) {
+            Puzzle("random_$size", art)
+        } else {
+            newRandomPuzzle(size)
+        }
+        open(puzzle)
+        randomSize = size
+    }
+
+    fun newRandom() {
+        val size = randomSize ?: return
+        open(newRandomPuzzle(size))
+        randomSize = size
+    }
+
+    private fun newRandomPuzzle(size: Int): Puzzle {
+        val puzzle = generatePuzzle(size)
+        prefs.edit()
+            .putString("art_random_$size", puzzle.art.joinToString("\n"))
+            .remove("grid_${puzzle.name}")
+            .putBoolean("solved_${puzzle.name}", false)
+            .apply()
+        return puzzle
     }
 
     fun close() {
