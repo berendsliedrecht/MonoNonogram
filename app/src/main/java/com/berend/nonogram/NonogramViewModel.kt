@@ -36,10 +36,14 @@ class NonogramViewModel(app: Application) : AndroidViewModel(app) {
 
     fun open(size: Int) {
         val art = prefs.getString("art_random_$size", null)?.split("\n")
-        val puzzle = if (art?.size == size && art.all { it.length == size }) {
+        var puzzle = if (art?.size == size && art.all { it.length == size }) {
             Puzzle("random_$size", art)
         } else {
             generateAndSave(size)
+        }
+        // A solved puzzle is done; revisiting the size starts a fresh one
+        if (prefs.getBoolean("solved_${puzzle.name}", false)) {
+            puzzle = generateAndSave(size)
         }
         val saved = prefs.getString("grid_${puzzle.name}", null)
         grid.clear()
@@ -48,7 +52,7 @@ class NonogramViewModel(app: Application) : AndroidViewModel(app) {
         } else {
             repeat(puzzle.rows * puzzle.cols) { grid.add(Cell.Empty) }
         }
-        solved = prefs.getBoolean("solved_${puzzle.name}", false) && matchesSolution(puzzle)
+        solved = false
         lastSolveMillis = null
         tool = Tool.Fill
         undoStack.clear()
