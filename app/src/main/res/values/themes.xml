@@ -1,4 +1,4 @@
 <resources>
     <!-- MMD provides the composable theme; this is a minimal placeholder. -->
-    <style name="Theme.CalmNonogram" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.MonoNonogram" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>

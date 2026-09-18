@@ -15,5 +15,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "CalmNonogram"
+rootProject.name = "MonoNonogram"
 include(":app")
