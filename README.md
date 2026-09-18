@@ -21,6 +21,10 @@ Or sideload the release APK from `app/build/outputs/apk/release/` (debug-signed 
 
 `PuzzleSolvabilityTest` checks clue derivation, rejects an ambiguous puzzle, and asserts generated puzzles at every size are solvable with line logic alone.
 
+## Support
+
+If you find this app useful, consider [sponsoring me](https://github.com/sponsors/berendsliedrecht).
+
 ## License
 
 [MIT](LICENSE)
