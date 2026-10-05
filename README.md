@@ -4,11 +4,10 @@ Randomly generated nonogram (picture logic) puzzles for the Mudita Kompakt (e-in
 
 ## Install
 
-```
-./gradlew installDebug
-```
+Download the latest APK from the [releases page](../../releases) and sideload it,
+or build from source:
 
-Or sideload the release APK from `app/build/outputs/apk/release/` (debug-signed on purpose so it installs directly).
+    ./gradlew installDebug
 
 ## Structure
 
